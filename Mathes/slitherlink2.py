@@ -336,9 +336,9 @@ def get_candidates(solution):
         parity_pass_0(link, parity)
         parity_pass_1(link, parity, known_edges)
 
-        print to_string(solution)
-        print
-        time.sleep(.1)
+        # print to_string(solution)
+        # print
+        # time.sleep(.1)
 
         if link[0] == link[-1]:
             sub = under(edge_counts)
