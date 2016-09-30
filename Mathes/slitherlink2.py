@@ -377,7 +377,7 @@ def get_candidates(solution):
     if len(link) > 1:
         faces = side_faces(link)
         update(link, faces, edge_counts, known_edges, parity)
-        twos(link, known_edges)
+        # twos(link, known_edges)
         parity_pass_0(link, parity)
         parity_pass_1(link, parity, known_edges)
         parity_pass_1(link, parity, known_edges)
