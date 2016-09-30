@@ -144,6 +144,10 @@ def fill_test(link, lack):
         queue.extend(next)
     return False
 
+def ngbr_faces(face):
+    x, y = face
+    return [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+
 def adj_faces(link, face):
     v = vertices(face)
     x, y = face
@@ -196,8 +200,7 @@ def parity_pass_1(link, parity, known_edges):
     for i in range(size):
         for j in range(size):
             if board[i][j] > -1 and (parity[i][j] > -1 or (j, i) in side_faces(link)):
-                free, blocked = adj_faces(link, (j, i))
-                adj = free + blocked
+                adj = ngbr_faces((j, i))
 
                 inside = []
                 outside = []
@@ -311,6 +314,17 @@ def parity_pass_1(link, parity, known_edges):
                         if x >= 0 and x < size and y >= 0 and y < size:
                             parity[y][x] = 1
 
+def parity_pass_2(parity, known_edges):
+    for i in range(size):
+        for j in range(size):
+            if parity[i][j] > -1:
+                adj = ngbr_faces((j, i))
+
+                for face in adj:
+                    if get_parity(face, parity) > -1 and 1 - get_parity(face, parity) == parity[i][j]:
+                        known_edges.append(edge_between(face, (j, i)))
+
+
 def check_known(link, known_edges):
     if len(link) < 3 or len(known_edges) == 0:
         return True
@@ -335,15 +349,22 @@ def get_candidates(solution):
         update(link, faces, edge_counts, parity)
         parity_pass_0(link, parity)
         parity_pass_1(link, parity, known_edges)
+        parity_pass_1(link, parity, known_edges)
+        parity_pass_2(parity, known_edges)
 
-        print to_string(solution)
-        print
-        time.sleep(.1)
+        # print to_string(solution)
+        # print
+        # time.sleep(.1)
+
+        if not over(faces, edge_counts):
+            return []
 
         if link[0] == link[-1]:
             sub = under(edge_counts)
-            if over(faces, edge_counts) and fill_test(link, sub):
-                return True
+            if len(sub) != 0:
+                return []
+            
+            return True
 
         known_edges = list(set(known_edges))
         if check_known(link, known_edges) == False:
@@ -360,15 +381,10 @@ def get_candidates(solution):
 
             return [[newlink, newedge, newparity, new_known_edges]]
 
-        if not over(faces, edge_counts):
-            return []
-
-        sub = under(edge_counts)
-        if not fill_test(link, sub):
-            return []
-
-        if link[0] == link[-1]:
-            return True
+        if link[0] != link[-1]:
+            sub = under(edge_counts)
+            if not fill_test(link, sub):
+                return []
 
     candidates = []
     for neighbor in free_neighbors(link[-1], link):
@@ -473,4 +489,4 @@ initial = [[(0,0)], empty_array(0, size), empty_array(-1, size), []]
 solution = BacktrackSolve2([initial], get_candidates)
 
 print to_string(solution)
-print "Solved in " + str(time.time() - start)
+print "Solved in " + str(time.time() - start) + "seconds"
