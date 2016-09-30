@@ -336,9 +336,9 @@ def get_candidates(solution):
         parity_pass_0(link, parity)
         parity_pass_1(link, parity, known_edges)
 
-        # print to_string(solution)
-        # print
-        # time.sleep(.1)
+        print to_string(solution)
+        print
+        time.sleep(.1)
 
         if link[0] == link[-1]:
             sub = under(edge_counts)
@@ -444,16 +444,16 @@ def to_string(solution):
 
 size = 10
 board = [
-    "3   322211",
-    "  12    33",
-    " 32  32  2",
-    "  3 1  3 3",
-    "  1    122",
-    "  3      2",
-    " 1    1231",
-    " 2       2",
-    "22   22221",
-    "3332 23222"
+    "23 3  2 3 ",
+    "2 2   11 2",
+    "2   23 2  ",
+    "  21 1 11 ",
+    "11 11  1  ",
+    "2 20 20133",
+    "21 2222  1",
+    " 2  21111 ",
+    " 1    2  3",
+    " 2  3     "
 ]
 
 def parse(char):
