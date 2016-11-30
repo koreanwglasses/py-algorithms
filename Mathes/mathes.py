@@ -221,10 +221,10 @@ def bis_root(f, a, b, n=-1, e=1e-15, debug=False):
 
 # ---- Statistics ---- #
 
-def erf_precise(z):
-    return nint_simp(lambda t: math.e**(-t**2 / 2.0), 0, z, 30)
+def erf_precise(z, k=30):
+    return nint_simp(lambda t: math.e**(-t**2 / 2.0), 0, z, k)
 
-def qrt_precise(p):
+def qrt_precise(p, k=30):
     assert 0 <= p and p <= 1
     if p == 1:
         return float("inf")
@@ -341,12 +341,14 @@ if __name__ == '__main__':
 
     f = np.vectorize(qrt)
     g = np.vectorize(qrt_precise)
-    x = np.arange(0.01, .99, 0.01)
+    x = np.arange(0.01, 1, 0.01)
 
     plt.show()
-    plt.plot(x, f(x), 'r-')
-    plt.plot(x, g(x), 'g-')
-    plt.axis([0, 1, -2, 2])
+    # plt.plot(x, f(x), 'r-')
+    # plt.plot(x, g(x), 'g-')
+    # plt.axis([0, 1, -2, 2])
+    plt.plot(x, f(x) - g(x), 'b-')
+    plt.axis([0, 1, -0.1, 0.1])
     plt.show()
 
     # import random
