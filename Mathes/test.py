@@ -39,7 +39,39 @@ def m_bonacci_cnst(m, n=100):
 
 #     print "{} {}".format(pi, p)
 
-for a in range(2,1000):
-    for b in range(2,1000):
-        if (a * a + b * b) % (a * b + 1) == 0:
-            print '{} {} {}'.format(a, b, int(((a * a + b * b) / (a * b + 1))**.5)) 
+import time
+
+times_csv = ''
+
+def test(a, b, c, n):
+    return a * a * a + b * b * b + c * c * c == n
+
+def sum_of_cubes(n):
+    limit = 1
+    while limit < 300:
+        for a in [-limit, limit]:
+            for b in range(-limit, limit + 1):
+                for c in range(-limit, limit + 1):
+                    if test(a, b, c, n):
+                        return (a, b, c)
+        for b in [-limit, limit]:
+            for a in range(-limit, limit + 1):
+                for c in range(-limit, limit + 1):
+                    if test(a, b, c, n):
+                        return (a, b, c)
+        for c in [-limit, limit]:
+            for a in range(-limit, limit + 1):
+                for b in range(-limit, limit + 1):
+                    if test(a, b, c, n):
+                        return (a, b, c)
+        limit = limit + 1
+
+        global last_time, times_csv
+        times_csv += str(limit) + ',' + str(time.time() - last_time) + '\n'
+        last_time = time.time();
+        
+last_time = time.time()
+sum_of_cubes(30)
+
+f = open('images/test.csv','w+')
+f.write(times_csv)

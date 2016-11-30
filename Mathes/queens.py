@@ -11,8 +11,8 @@ def initial(n):
 
 def get_candidates(queens):
     
-#    print_board(queens)
-#    time.sleep(.5)
+    print_board(queens)
+    time.sleep(.5)
     
     queen_cols = [c for r, c in queens]
     queen_diag_down = [r - c for r, c in queens]

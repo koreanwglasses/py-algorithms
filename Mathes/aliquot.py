@@ -35,6 +35,8 @@ while n > 1:
    
    ax.clear()
 
+   plt.clf()
+
    plt.plot(x, y, 'r-')
    plt.axis([0, x[-1], 0, max(y) * 1.1])
 
