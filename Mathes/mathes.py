@@ -2,9 +2,10 @@ import gmpy2
 from gmpy2 import mpz
 import numbers
 import math
+import random
+import itertools
 
 ## ---- List functions ---- ##
-
 def combinations_lists(lists, y):
     comb = [i + [j] for i in lists for j in y];
     return comb
@@ -89,8 +90,12 @@ def factors(n):
 
     return sorted(factors)
 
-## ---- Number theory ---- ##
+def factor_partition(n, f=None):
+    if f == None:
+        return [factor_partition(n, factor) for factor in factors(n)[1:]]
+    return [[factor] + factor_partition(f, factor) for factor in factors(n / f)[1:] if factor <= f]
 
+## ---- Number theory ---- ##
 partitions_memoize = {}
 
 def partitions_p(n, m):
@@ -146,6 +151,32 @@ def continued_fraction(n, d):
         n, d = d, n % d
     return cf
 
+def tri_num(n):
+    return n * (n + 1) / 2
+
+def tri_inv(t):
+    return int(math.ceil(0.5 * (math.sqrt(8 * t + 1) - 1)))
+
+def tri_part(n):
+    tri = [tri_num(k) for k in range(1, tri_inv(n))]
+    for comb in itertools.combinations_with_replacement(tri, 3):
+        if sum(comb) == n:
+            return comb
+    return []
+
+def poly_num(s, n):
+    return (n * n * (s - 2) - n * (s - 4)) / 2
+
+def poly_num_inv(s, x):
+    return int(math.ceil((math.sqrt(8 * (s - 2) * x + (s - 4) * (s - 4)) + s - 4) / (2 * (s - 2))))
+
+def poly_part(s, n):
+    poly = [poly_num(s, k) for k in range(1, poly_num_inv(s, n))]
+    for comb in itertools.combinations_with_replacement(poly, s):
+        if sum(comb) == n:
+            return comb
+    return []
+
 # ---- Approximations ---- #
 def nint_simp(f, a, b, n):
     h = (b - a) / float(n)
@@ -162,11 +193,12 @@ def nint_simp_inf(f, n):
 def nint2d_simp_inf(f, n):
     return nint_simp_inf(lambda y: nint_simp_inf(lambda x: f(x, y), n), n)
 
-def sec_root(f, n=-1, e=1e-15, x_0=-.5, x_1=.75):
+def sec_root(f, n=-1, e=1e-15, x_0=-.5, x_1=.75, debug=False):
     x = [0, x_1, x_0]
 
     def sec_iter():
-        print x
+        if debug:
+            print x
         x[0], x[1], x[2] = (x[2] * f(x[1]) - x[1] * f(x[2])) / (f(x[1]) - f(x[2])), x[0], x[1]
 
     if n <= 0:
@@ -219,10 +251,62 @@ def bis_root(f, a, b, n=-1, e=1e-15, debug=False):
                 break
         return x[2]
 
-# ---- Statistics ---- #
+def sim_ann_reals(f, l, r, f_range, s0=None, n=1000):
+    if s0 == None:
+        s0 = random.uniform(l, r)
+    s = s0
+    domain = float(r - l)
 
+    def p(u, u_n, t):
+        if u_n < u:
+             return 1
+        else:
+            return math.exp(-(u_n - u) / (t * f_range))
+
+    for k in range(n):
+        s_n = random.normalvariate(s, domain / 12)
+
+        if s_n > r:
+            s_n = r
+        elif s_n < l:
+            s_n = l
+
+        if random.random() < p(f(s), f(s_n), float(n - k) / n):
+            s = s_n
+            print s
+    
+    return s
+
+def nm_min(dim, f, i, n, a=1, y=2, p=0.5, s=0.5):
+    assert (dim + 1) == len(i)
+    xs = i
+    for _ in range(n):
+        print xs
+        # order the vertices
+        xs = sorted(xs, key=f)
+        # calculate the centroid
+        xc = v_scl(v_sum(xs), 1.0 / (dim + 1))
+        # reflection
+        xr = v_add(xc, v_scl(v_sub(xc, xs[dim]), a))
+        if f(xs[0]) <= f(xr) and f(xr) < f(xs[dim - 1]):
+            xs[dim] = xr
+        elif f(xr) < f(xs[0]): #expansion
+            xe = v_add(xc, v_scl(v_sub(xr, xc),y))
+            if f(xe) < f(xr):
+                xs[dim] = xe
+            else:
+                xs[dim] = xr
+        else: #contraction
+            xcon = v_add(xc, v_scl(v_sub(xs[dim], xc),p))
+            if f(xcon) < f(xs[dim]):
+                xs[dim] = xcon
+            else:
+                xs = xs[:1] + [v_add(xs[0], v_scl(v_sub(x, xs[0]),s)) for x in xs[1:]]
+    return xs[0]
+
+# ---- Statistics ---- #
 def erf_precise(z, k=30):
-    return nint_simp(lambda t: math.e**(-t**2 / 2.0), 0, z, k)
+    return nint_simp(lambda t: (2.0 / math.sqrt(math.pi)) * math.e**(-t**2), 0, z, k)
 
 def qrt_precise(p, k=30):
     assert 0 <= p and p <= 1
@@ -230,7 +314,7 @@ def qrt_precise(p, k=30):
         return float("inf")
     elif p == 0:
         return float("-inf")
-    return bis_root(lambda z: 0.5 + erf_precise(z) / math.sqrt(2 * math.pi) - p, -10, 10)
+    return bis_root(lambda z: 0.5 + 0.5 * erf_precise(z / math.sqrt(2)) - p, -10, 10)
 
 erf_coeff = [ 1,
     .0705230784, .0422820123,
@@ -263,11 +347,31 @@ def qrt(p):
 
     return 2 * math.sqrt(2) * erfinv(2 * p - 1)
 
-# ---- Group Theory ---- #
+def lognormal_pdf(s, m, x):
+    return (1 / (x * s * math.sqrt(2 * math.pi))) * math.exp(-(math.log(x) - m)**2 / (2 * s**2))
 
+def lognormal_cdf_precise(s, m, x, k=30):
+    return 0.5 + 0.5 * erf_precise((math.log(n) - m) / (math.sqrt(2) * s), k)
+
+# ---- Group Theory ---- #
 def mod_log(a, b, n):
     return [e for e in range(n) if (a ** e) % n == b]
 
+# ---- Vertices ---- #
+def v_add(v1, v2):
+    assert len(v1) == len(v2)
+    return tuple(v1[i] + v2[i] for i in range(len(v1)))
+
+def v_sub(v1, v2):
+    assert len(v1) == len(v2)
+    return tuple(v1[i] - v2[i] for i in range(len(v1)))
+
+def v_sum(vs):
+    dim = len(vs[0])
+    return tuple(sum(v[i] for v in vs) for i in range(dim))
+
+def v_scl(v, s):
+    return tuple(v[i] * s for i in range(len(v)))
 # ---- Matrices ---- #
 class Matrix:
     def __init__(self, data, width, height):
@@ -325,6 +429,29 @@ class Matrix:
         else:
             return sum(self.data[0][c] * self.minor(0, c).det_naive() * (-1)**(c) for c in range(self.width))
 
+# ---- Chaos Theory ---- #
+def logistic_attractor(r, n=-1):
+    x = [0.5]
+    def iterate():
+        next_x = r * x[-1] * (1 - x[-1])
+        if next_x in x:
+            i = x.index(next_x)
+            return x[i:]
+        else:
+            x.append(next_x)
+            return False
+    if n == -1:
+        while True:
+            value = iterate()
+            if value != False:
+                return value
+    else:
+        for _ in range(n):
+            value = iterate()
+            if value != False:
+                return value
+        return x
+
 if __name__ == '__main__':
     # i = Matrix([[1,0,0,0]], 4, 1)
     # j = Matrix([[0,1,0,0]], 4, 1)
@@ -333,27 +460,7 @@ if __name__ == '__main__':
 
     # m1 = Matrix([[i,j,k,l],[1,2,3,4],[-3,-4,5,6],[5,6,7,8]], 4, 4)
 
-    # print m1.det_naive()
-    # print m1.det_naive() * Matrix([[1,2,3,4]],4, 1).transpose()
+    # print sec_root(lambda x: x**5 + x+ 1, x_0=-0.4 + 0.8j, x_1=-0.6 + 0.9j)
 
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    f = np.vectorize(qrt)
-    g = np.vectorize(qrt_precise)
-    x = np.arange(0.01, 1, 0.01)
-
-    plt.show()
-    # plt.plot(x, f(x), 'r-')
-    # plt.plot(x, g(x), 'g-')
-    # plt.axis([0, 1, -2, 2])
-    plt.plot(x, f(x) - g(x), 'b-')
-    plt.axis([0, 1, -0.1, 0.1])
-    plt.show()
-
-    # import random
-    # rand1 = [qrt(random.random()) for _ in range(1000)]
-    # rand2 = [qrt_precise(random.random()) for _ in range(1000)]
-    # rand3 = [random.gauss(0, 1) for _ in range(1000)]
-    # f = open('images/normal.csv','w+')
-    # f.write('\n'.join(['{},{},{}'.format(rand1[i], rand2[i], rand3[i]) for i in range(1000)]))
+    # print factor_partition(36)
+    print nm_min(2, lambda x: -math.exp(x[0] ** 2 + x[1] ** 2), [(0.1,0.2),(0.2,0.3),(0.4,0.5)], 100)
