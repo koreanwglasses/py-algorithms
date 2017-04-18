@@ -1,4 +1,4 @@
-target = eval(input())
+target = eval(raw_input())
 
 n = 0
 nl = 0
